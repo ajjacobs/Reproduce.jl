@@ -75,17 +75,16 @@ function job(experiment_file::AbstractString,
                    exception_dir=exception_dir)
 end
 
-function config_job(config_file::AbstractString, dir::AbstractString, num_runs::Int; data_manager=Config.HDF5Manager(), kwargs...)
-    cfg = ConfigManager(config_file, dir, data_manager)
+function config_job(cfg::ConfigManager, dir::AbstractString, num_runs::Int; kwargs...)
     exp_module_name = cfg.config_dict["config"]["exp_module_name"]
     exp_file = cfg.config_dict["config"]["exp_file"]
     exp_func_name = cfg.config_dict["config"]["exp_func_name"]
-    if IN_SLURM()
+    if Reproduce.IN_SLURM()
         if !isdir(joinpath(dir, "jobs"))
-            mkdir(joinpath(dir, "jobs"))
+            mkpath(joinpath(dir, "jobs"))
         end
         if !isdir(joinpath(dir, "jobs", cfg.config_dict["save_path"]))
-            mkdir(joinpath(dir, "jobs", cfg.config_dict["save_path"]))
+            mkpath(joinpath(dir, "jobs", cfg.config_dict["save_path"]))
         end
     end
     job(exp_file, dir, Config.iterator(cfg, num_runs);
@@ -96,6 +95,8 @@ function config_job(config_file::AbstractString, dir::AbstractString, num_runs::
         kwargs...)
 end
 
+config_job(config_file::AbstractString, dir::AbstractString, num_runs::Int; data_manager=Config.HDF5Manager(), kwargs...) = 
+    config_job(ConfigManager(config_file, dir, data_manager), dir, num_runs; kwargs...)
 
 job(exp::Experiment; exception_dir="except", kwargs...) =
     job(exp.file, exp.dir, exp.args_iter;
